@@ -1,39 +1,51 @@
-# import asyncio
-import socket
-import json
-from statistics import mean
+import socketserver
+import logging
+import processors as p
+import params as par
 
 
-SERVER_ADDRESS = ('localhost', 43501)
+class MyTCPHandler(socketserver.StreamRequestHandler):
+    def handle(self):
+        self.data = b''
+        while True:
+            chunk = self.request.recv(1024)
+            if not chunk:
+                break
+            self.data += chunk
+            if b'\n' in self.data:
+                break
+        logging.info(
+            'Received {} bytes from {}'.format(
+                len(self.data),
+                self.client_address
+            )
+        )
+        response = p.combine(self.data)
+        self.request.send(response)
+        logging.info(
+            'Sent {} bytes to {}'.format(
+                len(response),
+                self.client_address
+            )
+        )
 
 
-def processing(incoming_array: list) -> list:
-    output = [x for x in incoming_array if isinstance(x, int)]
-    output.sort()
-    output.append(mean(output))
-    return output
-
-
-def main() -> None:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    sock.bind(SERVER_ADDRESS)
-    sock.listen(1)
-    conn, addr = sock.accept()
-    while True:
-        data = conn.recv(1024)
-        if not data:
-            break
-        print('Recv: {}: {}'.format(len(data), data))
-        array = json.loads(str(bytes.decode(data, encoding='UTF-8')))
-        print(array)
-        output = json.dumps(processing(array))
-        print(output)
-        conn.send(bytes(output, encoding='UTF-8'))
-    conn.close()
-
-
-if __name__ == '__main__':
-    print('server is running, please, press ctrl+c to stop')
-    while True:
-        main()
+if __name__ == "__main__":
+    logging.basicConfig(
+        filename='last.log',
+        format='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%Y/%m/%d %H:%M:%S',
+        level=logging.INFO
+    )
+    logging.info('Started')
+    args = par.params.parse_args()
+    server = socketserver.TCPServer((args.server, args.port), MyTCPHandler)
+    print('starting server... for exit press Ctrl+C')
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        logging.info('CTRL+C exit')
+        exit()
+    except Exception as e:
+        logging.exception(e)
+        print(e)
