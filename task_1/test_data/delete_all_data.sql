@@ -1,0 +1,10 @@
+DELETE FROM `task_1`.`address`;
+DELETE FROM `task_1`.`campus`;
+DELETE FROM `task_1`.`mn`;
+DELETE FROM `task_1`.`chs`;
+DELETE FROM `task_1`.`history`;
+ALTER TABLE `task_1`.`history` AUTO_INCREMENT = 1;
+ALTER TABLE `task_1`.`chs` AUTO_INCREMENT = 1;
+ALTER TABLE `task_1`.`mn` AUTO_INCREMENT = 1;
+ALTER TABLE `task_1`.`campus` AUTO_INCREMENT = 1;
+ALTER TABLE `task_1`.`address` AUTO_INCREMENT = 1;
